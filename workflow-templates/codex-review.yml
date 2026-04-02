@@ -1,0 +1,10 @@
+name: Codex Review
+
+on:
+  pull_request:
+
+jobs:
+  codex-review:
+    uses: 5percentdrops/.github/.github/workflows/codex-review-reusable.yml@main
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
