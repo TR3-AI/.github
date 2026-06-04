@@ -2,25 +2,24 @@ name: Bootstrap staging
 
 on:
   workflow_dispatch:
-    schedule:
-        - cron: '17 * * * *'
+  schedule:
+    - cron: '17 * * * *'
 
-        permissions:
-          contents: read
+permissions:
+  contents: read
 
-          jobs:
-            staging:
-                runs-on: ubuntu-latest
-                    env:
-                          GH_TOKEN: ${{ secrets.TR3_AI_STAGING_BOOTSTRAP_TOKEN }}
-                                ORG: TR3-AI
-                                    steps:
-                                          - name: Create missing staging branches
-                                                  run: |
-                                                            test -n "$GH_TOKEN" || { echo "Missing TR3_AI_STAGING_BOOTSTRAP_TOKEN"; exit 1; }
-                                                                      gh repo list "$ORG" --limit 1000 --json name,defaultBranchRef,isArchived --jq '.[]|select(.isArchived|not)|select(.defaultBranchRef.name=="main" or .defaultBranchRef.name=="master")|[.name,.defaultBranchRef.name]|@tsv' | while read -r repo branch; do
-                                                                                  gh api "repos/$ORG/$repo/branches/staging" >/dev/null 2>&1 && { echo "ok $repo"; continue; }
-                                                                                              sha=$(gh api "repos/$ORG/$repo/git/ref/heads/$branch" --jq .object.sha 2>/dev/null) || { echo "skip $repo"; continue; }
-                                                                                                          gh api "repos/$ORG/$repo/git/refs" -f ref=refs/heads/staging -f sha="$sha" && echo "created $repo"
-                                                                                                                    done
-                                                                                                                    
+jobs:
+  staging:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.TR3_AI_STAGING_BOOTSTRAP_TOKEN }}
+      ORG: TR3-AI
+    steps:
+      - name: Create missing staging branches
+        run: |
+          test -n "$GH_TOKEN" || { echo "Missing TR3_AI_STAGING_BOOTSTRAP_TOKEN"; exit 1; }
+          gh repo list "$ORG" --limit 1000 --json name,defaultBranchRef,isArchived --jq '.[]|select(.isArchived|not)|select(.defaultBranchRef.name=="main" or .defaultBranchRef.name=="master")|[.name,.defaultBranchRef.name]|@tsv' | while read -r repo branch; do
+            gh api "repos/$ORG/$repo/branches/staging" >/dev/null 2>&1 && { echo "ok $repo"; continue; }
+            sha=$(gh api "repos/$ORG/$repo/git/ref/heads/$branch" --jq .object.sha 2>/dev/null) || { echo "skip $repo"; continue; }
+            gh api "repos/$ORG/$repo/git/refs" -f ref=refs/heads/staging -f sha="$sha" && echo "created $repo"
+          done
